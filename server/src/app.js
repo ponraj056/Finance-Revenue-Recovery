@@ -26,10 +26,14 @@ app.use(_express["default"].urlencoded({
 const authRoutes = require('./routes/authRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const profileRoutes = require('./routes/profileRoutes');
+const dashboardRoutes = require('./routes/dashboardRoutes');
+const simulationRoutes = require('./routes/simulationRoutes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/profile', profileRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/simulation', simulationRoutes);
 
 // Basic route
 app.get('/', function (req, res) {
