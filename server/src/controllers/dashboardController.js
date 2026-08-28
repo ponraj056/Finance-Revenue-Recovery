@@ -1,7 +1,7 @@
 "use strict";
 
-const Transaction = require('../models/Transaction');
-const RevenueIncident = require('../models/RevenueIncident');
+const Transaction = require('../models/Transaction').default || require('../models/Transaction');
+const RevenueIncident = require('../models/RevenueIncident').default || require('../models/RevenueIncident');
 
 exports.getOverview = async (req, res) => {
   try {

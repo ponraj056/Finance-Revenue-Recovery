@@ -1,8 +1,8 @@
 "use strict";
 
-const Transaction = require('../models/Transaction');
-const RevenueIncident = require('../models/RevenueIncident');
-const RecoveryOpportunity = require('../models/RecoveryOpportunity');
+const Transaction = require('../models/Transaction').default || require('../models/Transaction');
+const RevenueIncident = require('../models/RevenueIncident').default || require('../models/RevenueIncident');
+const RecoveryOpportunity = require('../models/RecoveryOpportunity').default || require('../models/RecoveryOpportunity');
 
 exports.runSimulation = async (req, res) => {
   try {

@@ -16,8 +16,18 @@ var app = (0, _express["default"])();
 // Middleware
 app.use((0, _helmet["default"])());
 app.use((0, _cors["default"])());
-// Exclude webhook route from express.json() if you need raw body later
-app.use(_express["default"].json());
+// Webhook route needs to come before express.json() to capture raw body if needed
+const razorpayWebhook = require('./webhooks/razorpay');
+// Capture raw body for webhook verification
+app.use(
+  _express["default"].json({
+    verify: (req, res, buf) => {
+      req.rawBody = buf;
+    }
+  })
+);
+app.use('/api/webhooks/razorpay', razorpayWebhook.handleRazorpayWebhook);
+
 app.use(_express["default"].urlencoded({
   extended: true
 }));
