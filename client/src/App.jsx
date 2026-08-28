@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { ThemeProvider } from './contexts/ThemeContext';
 
 // Layouts & Auth
 import MainLayout from './layouts/MainLayout';
@@ -20,57 +21,59 @@ import Users from './pages/admin/Users';
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        {/* Public Auth Routes */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/verify-otp" element={<OTPVerify />} />
+    <ThemeProvider>
+      <Router>
+        <Routes>
+          {/* Public Auth Routes */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/verify-otp" element={<OTPVerify />} />
 
-        {/* Protected Routes (USER, MERCHANT) */}
-        <Route element={<ProtectedRoute allowedRoles={['USER', 'MERCHANT', 'ADMIN', 'SUPER_ADMIN']} />}>
-          <Route 
-            path="/" 
-            element={
-              <MainLayout>
-                <Dashboard />
-              </MainLayout>
-            } 
-          />
-          <Route 
-            path="/profile" 
-            element={
-              <MainLayout>
-                <Profile />
-              </MainLayout>
-            } 
-          />
-        </Route>
+          {/* Protected Routes (USER, MERCHANT) */}
+          <Route element={<ProtectedRoute allowedRoles={['USER', 'MERCHANT', 'ADMIN', 'SUPER_ADMIN']} />}>
+            <Route 
+              path="/" 
+              element={
+                <MainLayout>
+                  <Dashboard />
+                </MainLayout>
+              } 
+            />
+            <Route 
+              path="/profile" 
+              element={
+                <MainLayout>
+                  <Profile />
+                </MainLayout>
+              } 
+            />
+          </Route>
 
-        {/* Admin Protected Routes */}
-        <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'SUPER_ADMIN']} />}>
-          <Route 
-            path="/admin" 
-            element={
-              <AdminLayout>
-                <AdminDashboard />
-              </AdminLayout>
-            } 
-          />
-          <Route 
-            path="/admin/users" 
-            element={
-              <AdminLayout>
-                <Users />
-              </AdminLayout>
-            } 
-          />
-        </Route>
-        
-        {/* Fallback */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </Router>
+          {/* Admin Protected Routes */}
+          <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'SUPER_ADMIN']} />}>
+            <Route 
+              path="/admin" 
+              element={
+                <AdminLayout>
+                  <AdminDashboard />
+                </AdminLayout>
+              } 
+            />
+            <Route 
+              path="/admin/users" 
+              element={
+                <AdminLayout>
+                  <Users />
+                </AdminLayout>
+              } 
+            />
+          </Route>
+          
+          {/* Fallback */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Router>
+    </ThemeProvider>
   );
 }
 
