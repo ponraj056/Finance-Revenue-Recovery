@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Users, AlertTriangle, ShieldCheck, Database, Activity } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 
 const StatCard = ({ title, value, icon, trend, isPositive }) => (
   <div className="bg-slate-800 border border-slate-700 rounded-xl p-5 hover:border-slate-600 transition-colors">
@@ -19,6 +20,36 @@ const StatCard = ({ title, value, icon, trend, isPositive }) => (
 );
 
 const AdminDashboard = () => {
+  const [metrics, setMetrics] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const { token } = useAuth();
+
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      try {
+        const response = await fetch('/api/admin/metrics', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+        if (data.success) {
+          setMetrics(data.data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch metrics:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    if (token) {
+      fetchMetrics();
+    }
+  }, [token]);
+
+  if (loading || !metrics) {
+    return <div className="p-8 text-center text-slate-400">Loading metrics...</div>;
+  }
+
   return (
     <div className="space-y-6 animate-fade-in-up">
       <div>
@@ -29,28 +60,28 @@ const AdminDashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard 
           title="Total Active Merchants" 
-          value="1,248" 
+          value={metrics.totalActiveMerchants.toLocaleString()} 
           icon={<Users className="text-blue-400" size={20} />} 
           trend="+12%" 
           isPositive={true} 
         />
         <StatCard 
           title="AI Decisions (24h)" 
-          value="142.5K" 
+          value={metrics.aiDecisions24h.toLocaleString()} 
           icon={<Activity className="text-purple-400" size={20} />} 
           trend="+5.4%" 
           isPositive={true} 
         />
         <StatCard 
           title="Active System Incidents" 
-          value="3" 
+          value={metrics.activeSystemIncidents.toString()} 
           icon={<AlertTriangle className="text-amber-400" size={20} />} 
           trend="-2" 
           isPositive={true} 
         />
         <StatCard 
           title="Global Recovery Rate" 
-          value="68.2%" 
+          value={`${metrics.globalRecoveryRate}%`} 
           icon={<ShieldCheck className="text-emerald-400" size={20} />} 
           trend="+1.2%" 
           isPositive={true} 
@@ -65,11 +96,7 @@ const AdminDashboard = () => {
             <button className="text-sm text-blue-400 hover:text-blue-300">View All</button>
           </div>
           <div className="space-y-4">
-            {[
-              { time: '10 mins ago', type: 'WARNING', msg: 'Razorpay Test API latency spike (>800ms)' },
-              { time: '1 hour ago', type: 'INFO', msg: 'AI Model swapped to gpt-4o for load balancing' },
-              { time: '3 hours ago', type: 'CRITICAL', msg: 'MongoDB replica set synchronization delayed' },
-            ].map((alert, idx) => (
+            {metrics.alerts.map((alert, idx) => (
               <div key={idx} className="flex items-start p-3 bg-slate-900/50 rounded-lg border border-slate-700/50">
                 <div className={`w-2 h-2 mt-1.5 rounded-full mr-3 shrink-0 ${
                   alert.type === 'CRITICAL' ? 'bg-rose-500' : 

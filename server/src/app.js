@@ -22,6 +22,15 @@ app.use(_express["default"].urlencoded({
   extended: true
 }));
 
+// Routes
+const authRoutes = require('./routes/authRoutes');
+const adminRoutes = require('./routes/adminRoutes');
+const profileRoutes = require('./routes/profileRoutes');
+
+app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/profile', profileRoutes);
+
 // Basic route
 app.get('/', function (req, res) {
   res.send('RecoveryOS API is running...');

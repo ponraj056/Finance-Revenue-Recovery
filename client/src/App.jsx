@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { AuthProvider } from './contexts/AuthContext';
 
 // Layouts & Auth
 import MainLayout from './layouts/MainLayout';
@@ -22,8 +23,9 @@ import Users from './pages/admin/Users';
 function App() {
   return (
     <ThemeProvider>
-      <Router>
-        <Routes>
+      <AuthProvider>
+        <Router>
+          <Routes>
           {/* Public Auth Routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
@@ -73,6 +75,7 @@ function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>
+      </AuthProvider>
     </ThemeProvider>
   );
 }

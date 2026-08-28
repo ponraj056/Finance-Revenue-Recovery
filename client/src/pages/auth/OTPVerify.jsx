@@ -1,98 +1,114 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { useLocation, useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import AuthLayout from '../../layouts/AuthLayout';
+import { useAuth } from '../../contexts/AuthContext';
 
 const OTPVerify = () => {
-  const [otp, setOtp] = useState(['', '', '', '', '', '']);
-  const [isVerifying, setIsVerifying] = useState(false);
-  const inputRefs = useRef([]);
   const location = useLocation();
   const navigate = useNavigate();
-
-  const phone = location.state?.phone || 'your phone number';
+  const { login } = useAuth();
+  
+  const email = location.state?.email;
+  const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const inputRefs = useRef([]);
 
   useEffect(() => {
-    // Focus first input on mount
-    if (inputRefs.current[0]) {
-      inputRefs.current[0].focus();
+    if (!email) {
+      navigate('/login');
     }
-  }, []);
+  }, [email, navigate]);
 
-  const handleChange = (index, e) => {
-    const value = e.target.value;
+  const handleChange = (index, value) => {
     if (isNaN(value)) return;
-
     const newOtp = [...otp];
-    // Take only the last character if multiple are pasted
-    newOtp[index] = value.substring(value.length - 1);
+    newOtp[index] = value;
     setOtp(newOtp);
 
-    // Move to next input if value exists
-    if (value && index < 5 && inputRefs.current[index + 1]) {
+    // Auto-focus next input
+    if (value !== '' && index < 5) {
       inputRefs.current[index + 1].focus();
     }
   };
 
   const handleKeyDown = (index, e) => {
-    // Move to previous input on backspace if current is empty
-    if (e.key === 'Backspace' && !otp[index] && index > 0 && inputRefs.current[index - 1]) {
+    // Auto-focus previous input on backspace if current is empty
+    if (e.key === 'Backspace' && otp[index] === '' && index > 0) {
       inputRefs.current[index - 1].focus();
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const otpValue = otp.join('');
-    if (otpValue.length === 6) {
-      setIsVerifying(true);
-      // Simulate API call
-      setTimeout(() => {
-        setIsVerifying(false);
+    if (otpValue.length !== 6) return;
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/auth/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, otp: otpValue })
+      });
+      const data = await response.json();
+      
+      if (data.success) {
+        // Authenticate user via context
+        login(data.user, data.token);
         navigate('/');
-      }, 1000);
+      } else {
+        setError(data.message || 'Invalid OTP');
+      }
+    } catch (err) {
+      setError('Network error. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <AuthLayout 
-      title="Verify your number" 
-      subtitle={`We've sent a 6-digit verification code to +91 ${phone}`}
+      title="Verify your identity" 
+      subtitle={`We've sent a 6-digit secure code to ${email || 'your device'}`}
     >
-      <form className="space-y-6" onSubmit={handleSubmit}>
-        <div className="flex justify-between items-center max-w-sm mx-auto gap-2">
+      <form className="space-y-8" onSubmit={handleSubmit}>
+        <div className="flex justify-center space-x-3 sm:space-x-4">
           {otp.map((digit, index) => (
             <input
               key={index}
               ref={el => inputRefs.current[index] = el}
               type="text"
-              inputMode="numeric"
-              maxLength={1}
+              maxLength="1"
               value={digit}
-              onChange={(e) => handleChange(index, e)}
+              onChange={(e) => handleChange(index, e.target.value)}
               onKeyDown={(e) => handleKeyDown(index, e)}
-              className="w-12 h-14 text-center text-xl font-semibold border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm"
-              required
+              className="w-10 h-12 sm:w-12 sm:h-14 text-center text-xl sm:text-2xl font-bold border border-gray-300 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm dark:bg-slate-800 dark:text-white transition-shadow"
             />
           ))}
         </div>
 
-        <div>
+        {error && <div className="text-red-500 text-sm text-center font-medium">{error}</div>}
+
+        <div className="pt-2">
           <button
             type="submit"
-            disabled={isVerifying || otp.join('').length !== 6}
-            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-lg shadow-blue-500/30 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 hover:scale-[1.02] transition-all disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed"
+            disabled={loading || otp.join('').length !== 6}
+            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-lg shadow-blue-500/30 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 hover:scale-[1.02] transition-all disabled:opacity-50 disabled:hover:scale-100"
           >
-            {isVerifying ? 'Verifying...' : 'Verify & Continue'}
+            {loading ? 'Verifying...' : 'Verify Secure Code'}
           </button>
         </div>
-        
-        <div className="mt-6 flex items-center justify-between text-sm">
-          <Link to="/login" className="text-gray-500 hover:text-gray-900 transition-colors">
-            Change number
-          </Link>
-          <button type="button" className="font-medium text-blue-600 hover:text-blue-500 transition-colors">
-            Resend OTP
-          </button>
+
+        <div className="text-center mt-6">
+          <p className="text-sm text-gray-500 dark:text-slate-400">
+            Didn't receive the code?{' '}
+            <button type="button" className="font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500 transition-colors">
+              Resend Code
+            </button>
+          </p>
         </div>
       </form>
     </AuthLayout>

@@ -1,16 +1,34 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Filter, MoreVertical, Edit2, Ban, CheckCircle } from 'lucide-react';
-
-const usersData = [
-  { id: 'USR-892', name: 'Acme Corp', email: 'admin@acmecorp.com', role: 'MERCHANT', status: 'ACTIVE', joined: '2026-01-12' },
-  { id: 'USR-893', name: 'Global Tech', email: 'payments@globaltech.io', role: 'MERCHANT', status: 'SUSPENDED', joined: '2026-02-04' },
-  { id: 'USR-894', name: 'Sarah System', email: 'sarah.sys@recoveryos.com', role: 'ADMIN', status: 'ACTIVE', joined: '2025-11-20' },
-  { id: 'USR-895', name: 'Retail Plus', email: 'finance@retailplus.net', role: 'MERCHANT', status: 'ACTIVE', joined: '2026-03-15' },
-  { id: 'USR-896', name: 'John Doe', email: 'john.operator@recoveryos.com', role: 'OPERATOR', status: 'INACTIVE', joined: '2026-04-01' },
-];
+import { useAuth } from '../../contexts/AuthContext';
 
 const Users = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const { token } = useAuth();
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await fetch('/api/admin/users', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+        if (data.success) {
+          setUsers(data.data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch users:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    if (token) {
+      fetchUsers();
+    }
+  }, [token]);
 
   return (
     <div className="space-y-6 animate-fade-in-up">
@@ -56,46 +74,56 @@ const Users = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-700">
-              {usersData.map((user) => (
-                <tr key={user.id} className="hover:bg-slate-700/30 transition-colors group">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center font-bold text-slate-300">
-                        {user.name.charAt(0)}
-                      </div>
-                      <div>
-                        <p className="font-medium text-white">{user.name}</p>
-                        <p className="text-xs text-slate-500">{user.email}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`px-2.5 py-1 rounded-md text-xs font-medium border ${
-                      user.role === 'ADMIN' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' : 
-                      user.role === 'OPERATOR' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 
-                      'bg-slate-700 text-slate-300 border-slate-600'
-                    }`}>
-                      {user.role}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center space-x-1.5">
-                      {user.status === 'ACTIVE' ? <CheckCircle size={14} className="text-emerald-400" /> : <Ban size={14} className="text-rose-400" />}
-                      <span className={user.status === 'ACTIVE' ? 'text-emerald-400' : 'text-rose-400'}>
-                        {user.status}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-slate-400">
-                    {user.joined}
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <button className="text-slate-400 hover:text-white p-1 rounded transition-colors">
-                      <MoreVertical size={18} />
-                    </button>
-                  </td>
+              {loading ? (
+                <tr>
+                  <td colSpan="5" className="px-6 py-8 text-center text-slate-500">Loading users...</td>
                 </tr>
-              ))}
+              ) : users.length === 0 ? (
+                <tr>
+                  <td colSpan="5" className="px-6 py-8 text-center text-slate-500">No users found.</td>
+                </tr>
+              ) : (
+                users.filter(u => u.name.toLowerCase().includes(searchTerm.toLowerCase()) || u.email.toLowerCase().includes(searchTerm.toLowerCase())).map((user) => (
+                  <tr key={user._id} className="hover:bg-slate-700/30 transition-colors group">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center font-bold text-slate-300">
+                          {user.name.charAt(0)}
+                        </div>
+                        <div>
+                          <p className="font-medium text-white">{user.name}</p>
+                          <p className="text-xs text-slate-500">{user.email}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`px-2.5 py-1 rounded-md text-xs font-medium border ${
+                        user.role === 'ADMIN' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' : 
+                        user.role === 'OPERATOR' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 
+                        'bg-slate-700 text-slate-300 border-slate-600'
+                      }`}>
+                        {user.role}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center space-x-1.5">
+                        {user.status === 'ACTIVE' ? <CheckCircle size={14} className="text-emerald-400" /> : <Ban size={14} className="text-rose-400" />}
+                        <span className={user.status === 'ACTIVE' ? 'text-emerald-400' : 'text-rose-400'}>
+                          {user.status}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-slate-400">
+                      {new Date(user.createdAt).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <button className="text-slate-400 hover:text-white p-1 rounded transition-colors">
+                        <MoreVertical size={18} />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
